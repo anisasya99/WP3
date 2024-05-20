@@ -88,23 +88,24 @@ class Laporan extends CI_Controller
 
 	public function laporan_pinjam_pdf()
 	{
-		$this->load->library('Dompdf_gen');
-		
-		$data['laporan'] = $this->db->query(
-			"SELECT * FROM pinjam p,detail_pinjam d, buku b,user u WHERE d.id_buku=b.id AND p.id_user=u.id AND p.no_pinjam=d.no_pinjam"
-		)->result_array();
-		
-		$this->load->view('pinjam/laporan-pdf-pinjam', $data);
-		
-		$paper = 'A4';
-		$orien = 'landscape';
+		$data['laporan'] = $this->db->query("select * from pinjam p,detail_pinjam 
+		d,buku b,user u where d.id_buku=b.id and p.id_user=u.id and p.no_pinjam=d.no_pinjam")->result_array();
+		// $this->load->library('dompdf_gen');
+		$sroot = $_SERVER['DOCUMENT_ROOT'];
+		include $sroot . "/pustaka-booking/application/third_party/dompdf/autoload.inc.php";
+		$dompdf = new Dompdf\Dompdf();
+		$this->load->view('pinjam/laporan_pdf_pinjam', $data);
+		$paper_size = 'A4'; // ukuran kertas
+		$orientation = 'landscape'; //tipe format kertas potrait atau landscape
 		$html = $this->output->get_output();
-		
-		$this->dompdf->set_paper($paper, $orien);
-		$this->dompdf->load_html($html);
-		$this->dompdf->render();
-		$this->dompdf->stream("laporan data peminjaman.pdf");
+		$dompdf->set_paper($paper_size, $orientation);
+		//Convert to PDF
+		$dompdf->load_html($html);
+		$dompdf->render();
+		$dompdf->stream("laporan data peminjaman.pdf", array('Attachment' => 0));
+		// nama file pdf yang di hasilkan
 	}
+
 
 	public function export_excel_pinjam()
 	{
@@ -114,6 +115,56 @@ class Laporan extends CI_Controller
 		);
 		$this->load->view('pinjam/export-excel-pinjam', $data);
 	}
+
+	public function laporan_anggota()
+	{
+		$data = array(
+			'judul' => 'Laporan Data Anggota',
+			'user' => $this->ModelUser->cekData(['email' => $this->session->userdata('email')])->row_array(),
+			'anggota' => $this->db->query(
+				'SELECT * FROM user u'
+			)->result_array()
+		);
+
+		$this->load->view('templates/header', $data);
+		$this->load->view('templates/sidebar');
+		$this->load->view('templates/topbar', $data);
+		$this->load->view('user/laporan_anggota', $data);
+		$this->load->view('templates/footer');
+	}
+	public function cetak_laporan_anggota()
+	{
+		$data['anggota'] = $this->db->get('user')->result_array();
+
+		$this->load->view('user/laporan_print_anggota', $data);
+	}
+	public function laporan_anggota_pdf()
+	{
+		$data['anggota'] = $this->db->get('user')->result_array();
+		// $this->load->library('dompdf_gen');
+		$sroot = $_SERVER['DOCUMENT_ROOT'];
+		include $sroot . "/pustaka-booking/application/third_party/dompdf/autoload.inc.php";
+		$dompdf = new Dompdf\Dompdf();
+		$this->load->view('user/laporan_pdf_anggota', $data);
+		$paper_size = 'A4'; // ukuran kertas
+		$orientation = 'landscape'; //tipe format kertas potrait atau landscape
+		$html = $this->output->get_output();
+		$dompdf->set_paper($paper_size, $orientation);
+		//Convert to PDF
+		$dompdf->load_html($html);
+		$dompdf->render();
+		$dompdf->stream("laporan data anggota.pdf", array('Attachment' => 0));
+		// nama file pdf yang di hasilkan
+	}
+	
+	public function export_excel_anggota()
+	{
+		$data = array(
+			'judul' => 'Laporan Data Anggota',
+			'anggota' => $this->db->get('user')->result_array());
+		$this->load->view('user/export_excel_anggota', $data);
+	}
+
 }
 
 
